@@ -1,0 +1,101 @@
+{
+  "video_name": "demo_video",
+  "analysis_timestamp": "2024-01-15T12:00:00Z",
+  "labels": [
+    {
+      "description": "Person",
+      "confidence": 0.96,
+      "segments": [
+        { "start": 0, "end": 25 },
+        { "start": 40, "end": 85 },
+        { "start": 100, "end": 120 }
+      ]
+    },
+    {
+      "description": "Outdoor",
+      "confidence": 0.92,
+      "segments": [
+        { "start": 0, "end": 120 }
+      ]
+    },
+    {
+      "description": "Walking",
+      "confidence": 0.89,
+      "segments": [
+        { "start": 5, "end": 30 },
+        { "start": 50, "end": 80 }
+      ]
+    },
+    {
+      "description": "Park",
+      "confidence": 0.85,
+      "segments": [
+        { "start": 10, "end": 90 }
+      ]
+    },
+    {
+      "description": "Dog",
+      "confidence": 0.91,
+      "segments": [
+        { "start": 20, "end": 60 }
+      ]
+    }
+  ],
+  "shots": [
+    { "start": 0, "end": 35 },
+    { "start": 35, "end": 70 },
+    { "start": 70, "end": 120 }
+  ],
+  "objects": [
+    {
+      "name": "person",
+      "confidence": 0.94,
+      "bounding_boxes": [
+        {
+          "time": 10,
+          "left": 0.2,
+          "top": 0.1,
+          "right": 0.6,
+          "bottom": 0.9
+        },
+        {
+          "time": 50,
+          "left": 0.3,
+          "top": 0.15,
+          "right": 0.7,
+          "bottom": 0.85
+        }
+      ]
+    },
+    {
+      "name": "dog",
+      "confidence": 0.88,
+      "bounding_boxes": [
+        {
+          "time": 30,
+          "left": 0.1,
+          "top": 0.6,
+          "right": 0.4,
+          "bottom": 0.9
+        }
+      ]
+    }
+  ],
+  "text": [],
+  "faces": [
+    {
+      "confidence": 0.93,
+      "time_range": {
+        "start": 8,
+        "end": 28
+      }
+    },
+    {
+      "confidence": 0.87,
+      "time_range": {
+        "start": 45,
+        "end": 75
+      }
+    }
+  ]
+}

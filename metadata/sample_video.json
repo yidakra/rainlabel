@@ -1,0 +1,93 @@
+{
+  "video_name": "sample_video",
+  "analysis_timestamp": "2024-01-15T10:30:00Z",
+  "labels": [
+    {
+      "description": "Person",
+      "confidence": 0.95,
+      "segments": [
+        { "start": 0, "end": 30 },
+        { "start": 45, "end": 120 },
+        { "start": 150, "end": 180 }
+      ]
+    },
+    {
+      "description": "Car",
+      "confidence": 0.88,
+      "segments": [
+        { "start": 15, "end": 60 },
+        { "start": 90, "end": 135 }
+      ]
+    },
+    {
+      "description": "Building",
+      "confidence": 0.92,
+      "segments": [
+        { "start": 0, "end": 180 }
+      ]
+    },
+    {
+      "description": "Street",
+      "confidence": 0.85,
+      "segments": [
+        { "start": 10, "end": 170 }
+      ]
+    },
+    {
+      "description": "Tree",
+      "confidence": 0.78,
+      "segments": [
+        { "start": 30, "end": 90 },
+        { "start": 120, "end": 180 }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "start": 0,
+      "end": 45
+    },
+    {
+      "start": 45,
+      "end": 120
+    },
+    {
+      "start": 120,
+      "end": 180
+    }
+  ],
+  "objects": [
+    {
+      "name": "vehicle",
+      "confidence": 0.89,
+      "bounding_boxes": [
+        {
+          "time": 20,
+          "left": 0.1,
+          "top": 0.3,
+          "right": 0.4,
+          "bottom": 0.7
+        }
+      ]
+    }
+  ],
+  "text": [
+    {
+      "text": "STOP",
+      "confidence": 0.94,
+      "time_range": {
+        "start": 25,
+        "end": 35
+      }
+    }
+  ],
+  "faces": [
+    {
+      "confidence": 0.91,
+      "time_range": {
+        "start": 5,
+        "end": 25
+      }
+    }
+  ]
+}

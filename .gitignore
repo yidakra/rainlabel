@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# RainLabel specific
+node_modules/
+service-account-key.json
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+!videos/.gitkeep
