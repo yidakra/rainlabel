@@ -1,169 +1,146 @@
-#!/usr/bin/env python3
-"""
-Google Cloud Video Intelligence API integration script.
-This script analyzes videos and saves the results as JSON metadata.
-
-Requirements:
-- Google Cloud Video Intelligence API credentials
-- Video files in the videos/ directory
-
-Usage:
-    python analyze_video.py <video_filename>
-"""
-
 import os
 import json
-import sys
 from pathlib import Path
-from google.cloud import videointelligence
+from google.cloud import videointelligence_v1 as videointelligence
 
-def analyze_video(video_path, output_path):
-    """Analyze video using Google Cloud Video Intelligence API."""
-    
-    # Initialize the client
-    client = videointelligence.VideoIntelligenceServiceClient()
-    
-    # Read the video file
-    with open(video_path, "rb") as f:
-        video_content = f.read()
-    
-    # Configure the request
-    features = [
-        videointelligence.Feature.LABEL_DETECTION,
-        videointelligence.Feature.SHOT_CHANGE_DETECTION,
-        videointelligence.Feature.OBJECT_TRACKING,
-        videointelligence.Feature.TEXT_DETECTION,
-        videointelligence.Feature.FACE_DETECTION,
-    ]
-    
-    # Submit the request
+# Resolve videos directory relative to repository root, allow env override
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_VIDEOS = (BASE_DIR / "videos").as_posix()
+VIDEO_DIR = os.environ.get("VIDEO_DIR", DEFAULT_VIDEOS)
+
+client = videointelligence.VideoIntelligenceServiceClient()
+
+FEATURES = [
+    videointelligence.Feature.LABEL_DETECTION,
+    videointelligence.Feature.SHOT_CHANGE_DETECTION,
+    videointelligence.Feature.EXPLICIT_CONTENT_DETECTION,
+    videointelligence.Feature.OBJECT_TRACKING,
+    videointelligence.Feature.PERSON_DETECTION
+]
+
+MAX_UPLOAD_BYTES = 524288000  # 500 MB API limit
+
+def time_offset_to_sec(time_offset):
+    # Handle protobuf Duration (seconds+nanos) and potential datetime.timedelta
+    if hasattr(time_offset, "seconds") and hasattr(time_offset, "nanos"):
+        return float(time_offset.seconds) + float(time_offset.nanos) / 1e9
+    if hasattr(time_offset, "total_seconds"):
+        return float(time_offset.total_seconds())
+    if hasattr(time_offset, "seconds") and hasattr(time_offset, "microseconds"):
+        return float(time_offset.seconds) + float(time_offset.microseconds) / 1e6
+    return 0.0
+
+def analyze_video(file_path):
+    with open(file_path, "rb") as f:
+        input_content = f.read()
+
     operation = client.annotate_video(
         request={
-            "features": features,
-            "input_content": video_content,
+            "features": FEATURES,
+            "input_content": input_content
         }
     )
-    
-    print(f"Processing video: {video_path}")
-    result = operation.result(timeout=600)  # Wait up to 10 minutes
-    
-    # Process the results
-    metadata = {
-        "video_name": Path(video_path).stem,
-        "analysis_timestamp": result.annotation_results[0].input_uri or "local_analysis",
-        "labels": [],
-        "shots": [],
-        "objects": [],
-        "text": [],
-        "faces": []
-    }
-    
-    # Extract label annotations
-    for annotation in result.annotation_results:
-        # Label detection
-        for label in annotation.segment_label_annotations:
-            label_data = {
-                "description": label.entity.description,
-                "confidence": label.segments[0].confidence if label.segments else 0.0,
-                "segments": []
-            }
-            
-            for segment in label.segments:
-                start_time = segment.segment.start_time_offset.total_seconds()
-                end_time = segment.segment.end_time_offset.total_seconds()
-                label_data["segments"].append({
-                    "start": start_time,
-                    "end": end_time
-                })
-            
-            metadata["labels"].append(label_data)
-        
-        # Shot change detection
-        for shot in annotation.shot_annotations:
-            start_time = shot.start_time_offset.total_seconds()
-            end_time = shot.end_time_offset.total_seconds()
-            metadata["shots"].append({
-                "start": start_time,
-                "end": end_time
-            })
-        
-        # Object tracking
-        for obj in annotation.object_annotations:
-            obj_data = {
-                "name": obj.entity.description,
-                "confidence": obj.confidence,
-                "bounding_boxes": []
-            }
-            
-            for frame in obj.frames:
-                time_offset = frame.time_offset.total_seconds()
-                bbox = frame.normalized_bounding_box
-                obj_data["bounding_boxes"].append({
-                    "time": time_offset,
-                    "left": bbox.left,
-                    "top": bbox.top,
-                    "right": bbox.right,
-                    "bottom": bbox.bottom
-                })
-            
-            metadata["objects"].append(obj_data)
-        
-        # Text detection
-        for text in annotation.text_annotations:
-            text_data = {
-                "text": text.text,
-                "confidence": text.confidence,
-                "time_range": {
-                    "start": text.segments[0].segment.start_time_offset.total_seconds(),
-                    "end": text.segments[0].segment.end_time_offset.total_seconds()
-                }
-            }
-            metadata["text"].append(text_data)
-        
-        # Face detection
-        for face in annotation.face_detection_annotations:
-            for track in face.tracks:
-                face_data = {
-                    "confidence": track.confidence,
-                    "time_range": {
-                        "start": track.segment.start_time_offset.total_seconds(),
-                        "end": track.segment.end_time_offset.total_seconds()
-                    }
-                }
-                metadata["faces"].append(face_data)
-    
-    # Save the metadata
-    with open(output_path, 'w') as f:
-        json.dump(metadata, f, indent=2)
-    
-    print(f"Analysis complete. Metadata saved to: {output_path}")
-    return metadata
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python analyze_video.py <video_filename>")
-        sys.exit(1)
-    
-    video_filename = sys.argv[1]
-    video_path = Path("videos") / video_filename
-    
-    if not video_path.exists():
-        print(f"Error: Video file not found: {video_path}")
-        sys.exit(1)
-    
-    # Create output path
-    output_path = Path("metadata") / f"{video_path.stem}.json"
-    output_path.parent.mkdir(exist_ok=True)
-    
-    try:
-        analyze_video(str(video_path), str(output_path))
-    except Exception as e:
-        print(f"Error analyzing video: {e}")
-        print("Make sure you have:")
-        print("1. Google Cloud credentials configured")
-        print("2. Video Intelligence API enabled")
-        print("3. Sufficient API quota")
-        sys.exit(1)
+    print(f"Processing {file_path}...")
+    result = operation.result(timeout=600)
+    annotations = result.annotation_results[0]
+
+    output = {
+        "video_file": os.path.basename(file_path),
+        "labels": [],
+        "objects": [],
+        "persons": [],
+        "explicit_content": []
+    }
+
+    # Segment-level labels
+    for label in annotations.segment_label_annotations:
+        for seg in label.segments:
+            start = time_offset_to_sec(seg.segment.start_time_offset)
+            end = time_offset_to_sec(seg.segment.end_time_offset)
+            output["labels"].append({
+                "description": label.entity.description,
+                "category": [cat.description for cat in label.category_entities],
+                "confidence": seg.confidence,
+                "start_time": start,
+                "end_time": end
+            })
+
+    # Object tracking
+    for obj in annotations.object_annotations:
+        track = {
+            "entity": obj.entity.description,
+            "confidence": obj.confidence,
+            "frames": []
+        }
+        for frame in obj.frames:
+            frame_data = {
+                "time": time_offset_to_sec(frame.time_offset),
+                "bbox": {
+                    "left": frame.normalized_bounding_box.left,
+                    "top": frame.normalized_bounding_box.top,
+                    "right": frame.normalized_bounding_box.right,
+                    "bottom": frame.normalized_bounding_box.bottom,
+                }
+            }
+            track["frames"].append(frame_data)
+        output["objects"].append(track)
+
+    # Person detection
+    for person in annotations.person_detection_annotations:
+        person_data = {"tracks": []}
+        for track in person.tracks:
+            track_data = {
+                "segment": {
+                    "start_time": time_offset_to_sec(track.segment.start_time_offset),
+                    "end_time": time_offset_to_sec(track.segment.end_time_offset),
+                },
+                "landmarks": []
+            }
+            for timestamped_obj in track.timestamped_objects:
+                lm = []
+                for landmark in timestamped_obj.landmarks:
+                    lm.append({
+                        "type": landmark.type_.name,
+                        "position": {
+                            "x": landmark.point.x,
+                            "y": landmark.point.y,
+                        },
+                        "confidence": landmark.confidence,
+                    })
+                track_data["landmarks"].append({
+                    "time": time_offset_to_sec(timestamped_obj.time_offset),
+                    "landmarks": lm
+                })
+            person_data["tracks"].append(track_data)
+        output["persons"].append(person_data)
+
+    # Explicit content
+    for frame in annotations.explicit_annotation.frames:
+        output["explicit_content"].append({
+            "time": time_offset_to_sec(frame.time_offset),
+            "pornography_likelihood": frame.pornography_likelihood.name
+        })
+
+    # Save to JSON
+    json_file = file_path + ".json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
+
+    print(f"Saved annotations to {json_file}")
 
 if __name__ == "__main__":
-    main()
+    for fname in os.listdir(VIDEO_DIR):
+        if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+            file_path = os.path.join(VIDEO_DIR, fname)
+            try:
+                try:
+                    size_bytes = os.path.getsize(file_path)
+                    if size_bytes > MAX_UPLOAD_BYTES:
+                        print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
+                        continue
+                except OSError:
+                    pass
+                analyze_video(file_path)
+            except Exception as e:
+                print(f"Error with {fname}: {e}")

@@ -52,7 +52,7 @@ function Timeline({ duration, currentTime, labels, onTimelineClick }) {
                 backgroundColor: `hsl(${labelIndex * 137.5 % 360}, 70%, 70%)`,
                 opacity: 0.7
               }}
-              title={`${label.description}: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}
+              title={`${label.description} ${(typeof segment.confidence === 'number') ? `(${(segment.confidence * 100).toFixed(0)}%)` : ''}: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}
             />
           ))
         ))}
