@@ -90,6 +90,10 @@ The API will be available at `http://localhost:8000`
 
 The frontend will be available at `http://localhost:3000`
 
+#### Note on esbuild override
+
+We temporarily pin `esbuild` via the `overrides` field in `frontend/package.json` to `^0.25.9`. This ensures compatibility with our current `vite` toolchain, which may resolve to a newer `esbuild` version that causes install or build issues. If you update `vite` or related plugins, re-evaluate whether this override is still required.
+
 ### Adding Videos
 
 1. Place video files (MP4, AVI, MOV, MKV, WebM) in the `videos/` directory
