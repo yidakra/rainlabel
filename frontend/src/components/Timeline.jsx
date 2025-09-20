@@ -67,3 +67,5 @@ function Timeline({ duration, currentTime, labels, onTimelineClick }) {
 }
 
 export default Timeline;
+
+

@@ -24,10 +24,12 @@ function VideoPlayer({ video, onBack }) {
   const fetchMetadata = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/metadata/${video.name}`);
+      const response = await axios.get(`/metadata/${encodeURIComponent(video.name)}`, {
+        timeout: 10000
+      });
       setMetadata(response.data);
     } catch (err) {
-      console.error('Error fetching metadata:', err);
+      console.warn('Failed to fetch metadata, using sample data');
       // Create sample metadata for demo purposes
       setMetadata({
         video_name: video.name,
@@ -122,7 +124,7 @@ function VideoPlayer({ video, onBack }) {
       <button className="back-button" onClick={onBack}>
         ← Back to Videos
       </button>
-      
+
       <div className="video-player-container">
         <h2>{video.name}</h2>
         <video
@@ -131,7 +133,7 @@ function VideoPlayer({ video, onBack }) {
           controls
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          src={`http://localhost:8000${video.path}`}
+          src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${video.path}`}
         >
           Your browser does not support the video tag.
         </video>
@@ -163,3 +165,5 @@ function VideoPlayer({ video, onBack }) {
 }
 
 export default VideoPlayer;
+
+

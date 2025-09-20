@@ -49,3 +49,5 @@ function ActiveLabelPanel({ activeLabels, currentTime }) {
 }
 
 export default ActiveLabelPanel;
+
+

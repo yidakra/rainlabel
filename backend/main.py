@@ -1,11 +1,21 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pathlib import Path
+import logging
+import time
+from collections import deque
+import os
+import re
+import uuid
 
 app = FastAPI(title="RainLabel Video Analysis API", version="1.0.0")
+
+# Logger for audit and security events
+logger = logging.getLogger(__name__)
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -16,6 +26,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Basic request limits
+MAX_MULTIPART_SIZE = int(os.getenv("RAINLABEL_MAX_MULTIPART_SIZE", str(50 * 1024 * 1024)))  # 50 MiB default
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RAINLABEL_RATE_LIMIT_PER_MINUTE", "120"))
+
+_ip_windows: Dict[str, deque] = {}
+
+@app.middleware("http")
+async def _limits_middleware(request, call_next):
+    # Per-IP sliding window (60s)
+    now = time.monotonic()
+    client_ip = (request.headers.get("x-forwarded-for", "").split(",")[0].strip() or
+                 getattr(getattr(request, "client", None), "host", "unknown"))
+    window = _ip_windows.setdefault(client_ip, deque())
+    cutoff = now - 60.0
+    while window and window[0] < cutoff:
+        window.popleft()
+    if len(window) >= RATE_LIMIT_PER_MINUTE:
+        return JSONResponse({"detail": "Too Many Requests"}, status_code=429)
+    window.append(now)
+
+    # Multipart max size guard via Content-Length
+    ctype = request.headers.get("content-type", "").lower()
+    if "multipart/form-data" in ctype:
+        try:
+            content_length = int(request.headers.get("content-length", "0"))
+        except Exception:
+            content_length = 0
+        if content_length and content_length > MAX_MULTIPART_SIZE:
+            return JSONResponse({"detail": "Payload too large"}, status_code=413)
+    return await call_next(request)
+
 # Resolve project root regardless of current working directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,6 +64,68 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 VIDEOS_DIR = BASE_DIR / "videos"
 METADATA_DIR = BASE_DIR / "metadata"
 LABELS_DIR = BASE_DIR / "labels"
+
+# Supported video extensions
+VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
+
+
+def _is_child_path(child: Path, parent: Path) -> bool:
+    """Return True if child is inside parent after resolution."""
+    try:
+        return child.is_relative_to(parent)  # type: ignore[attr-defined]
+    except Exception:
+        parent_posix = parent.as_posix().rstrip("/") + "/"
+        return child.as_posix().startswith(parent_posix)
+
+
+def find_metadata_path(stem: str) -> Optional[Path]:
+    """Locate metadata for a given video stem across known locations.
+
+    Returns a Path if found, otherwise None. Includes basic input validation and
+    containment checks to avoid path traversal.
+    """
+    if not stem:
+        return None
+    if "\x00" in stem or any(sep in stem for sep in ("/", "\\", os.sep, os.altsep or "")):
+        return None
+    valid = False
+    try:
+        uuid.UUID(stem)
+        valid = True
+    except Exception:
+        valid = bool(re.fullmatch(r"^[A-Za-z0-9_-]+$", stem))
+    if not valid:
+        return None
+
+    # 1) metadata directory exact match
+    md_candidate = (METADATA_DIR / f"{stem}.json").resolve()
+    if md_candidate.exists() and _is_child_path(md_candidate, METADATA_DIR.resolve()):
+        return md_candidate
+
+    # 2) sidecar next to any matching video file
+    for ext in VIDEO_EXTENSIONS:
+        vp = (VIDEOS_DIR / f"{stem}{ext}").resolve()
+        if vp.exists() and _is_child_path(vp, VIDEOS_DIR.resolve()):
+            sidecar = Path(str(vp) + ".json").resolve()
+            if sidecar.exists() and _is_child_path(sidecar, VIDEOS_DIR.resolve()):
+                return sidecar
+
+    # 3) labels directory (exact or prefix match)
+    lb_candidate = (LABELS_DIR / f"{stem}.json").resolve()
+    if lb_candidate.exists() and _is_child_path(lb_candidate, LABELS_DIR.resolve()):
+        return lb_candidate
+    try:
+        for p in LABELS_DIR.glob(f"{stem}*.json"):
+            pr = p.resolve()
+            if pr.exists() and _is_child_path(pr, LABELS_DIR.resolve()):
+                return pr
+    except Exception:
+        pass
+    return None
+
+def has_metadata_for(stem: str) -> bool:
+    """Return True if any metadata exists for the given video stem."""
+    return find_metadata_path(stem) is not None
 
 # Ensure directories exist
 VIDEOS_DIR.mkdir(exist_ok=True)
@@ -43,31 +146,9 @@ async def get_videos() -> List[Dict[str, Any]]:
     
     if not VIDEOS_DIR.exists():
         return videos
-    
-    video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
-    
-    def has_metadata_for(stem: str) -> bool:
-        # 1) metadata directory
-        if (METADATA_DIR / f"{stem}.json").exists():
-            return True
-        # 2) sidecar next to any matching video file
-        for ext in video_extensions:
-            p = VIDEOS_DIR / f"{stem}{ext}"
-            if p.exists():
-                if Path(str(p) + ".json").exists():
-                    return True
-        # 3) labels directory (exact or prefix match)
-        if (LABELS_DIR / f"{stem}.json").exists():
-            return True
-        try:
-            for _ in LABELS_DIR.glob(f"{stem}*.json"):
-                return True
-        except Exception:
-            pass
-        return False
 
     for video_file in VIDEOS_DIR.iterdir():
-        if video_file.is_file() and video_file.suffix.lower() in video_extensions:
+        if video_file.is_file() and video_file.suffix.lower() in VIDEO_EXTENSIONS:
             try:
                 file_size = video_file.stat().st_size
             except Exception:
@@ -89,25 +170,8 @@ async def get_videos() -> List[Dict[str, Any]]:
 @app.get("/video/{video_name}")
 async def get_video(video_name: str) -> Dict[str, Any]:
     """Get specific video information"""
-    video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
     
-    def has_metadata_for(stem: str) -> bool:
-        if (METADATA_DIR / f"{stem}.json").exists():
-            return True
-        for ext in video_extensions:
-            p = VIDEOS_DIR / f"{stem}{ext}"
-            if p.exists() and Path(str(p) + ".json").exists():
-                return True
-        if (LABELS_DIR / f"{stem}.json").exists():
-            return True
-        try:
-            for _ in LABELS_DIR.glob(f"{stem}*.json"):
-                return True
-        except Exception:
-            pass
-        return False
-
-    for ext in video_extensions:
+    for ext in VIDEO_EXTENSIONS:
         video_path = VIDEOS_DIR / f"{video_name}{ext}"
         if video_path.exists():
             return {
@@ -123,29 +187,54 @@ async def get_video(video_name: str) -> Dict[str, Any]:
 @app.get("/metadata/{video_name}")
 async def get_metadata(video_name: str) -> Dict[str, Any]:
     """Get video analysis metadata"""
-    metadata_path = METADATA_DIR / f"{video_name}.json"
-    # Fallback: check for sidecar JSON next to any matching video file
+    # 1) Validate and canonicalize the input at the boundary
+    sanitized = (video_name or "").strip()
+    if "\x00" in sanitized or any(sep in sanitized for sep in ("/", "\\", os.sep, os.altsep or "")):
+        logger.warning("Rejected video_name with path separators or NUL byte: %r", video_name)
+        raise HTTPException(status_code=400, detail="Invalid video name")
+
+    is_uuid = False
+    try:
+        uuid.UUID(sanitized)
+        is_uuid = True
+    except Exception:
+        is_uuid = False
+
+    if not is_uuid and not re.fullmatch(r"^[A-Za-z0-9_-]+$", sanitized):
+        logger.warning("Rejected video_name not matching allow-list regex/UUID: %r", video_name)
+        raise HTTPException(status_code=400, detail="Invalid video name")
+
+    # 2) Authorization check (env-driven allow-list; default allow all)
+    allowed_env = os.getenv("RAINLABEL_ALLOWED_VIDEOS")
+    if allowed_env is not None:
+        allowed_set = {v.strip() for v in allowed_env.split(",") if v.strip()}
+        if sanitized not in allowed_set:
+            logger.warning("Forbidden access to video_name not in allow-list: %r", sanitized)
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+    # 3) Build canonical path under METADATA_DIR and ensure it stays within
+    base_resolved = METADATA_DIR.resolve()
+    candidate_resolved = (METADATA_DIR / f"{sanitized}.json").resolve()
+    try:
+        # Python 3.9+
+        is_inside = candidate_resolved.is_relative_to(base_resolved)  # type: ignore[attr-defined]
+    except Exception:
+        base_posix = base_resolved.as_posix().rstrip("/") + "/"
+        is_inside = candidate_resolved.as_posix().startswith(base_posix)
+    if not is_inside:
+        logger.warning(
+            "Path traversal attempt blocked: base=%s, candidate=%s, input=%r",
+            str(base_resolved), str(candidate_resolved), video_name,
+        )
+        raise HTTPException(status_code=400, detail="Invalid video name")
+
+    # Use sanitized name going forward
+    video_name = sanitized
+    metadata_path = candidate_resolved
     if not metadata_path.exists():
-        video_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
-        for ext in video_extensions:
-            candidate = VIDEOS_DIR / f"{video_name}{ext}"
-            if candidate.exists():
-                sidecar = Path(str(candidate) + ".json")
-                if sidecar.exists():
-                    metadata_path = sidecar
-                    break
-    # Fallback: check labels directory (supports both <name>.json and <name>* .json)
-    if not metadata_path.exists():
-        candidate = LABELS_DIR / f"{video_name}.json"
-        if candidate.exists():
-            metadata_path = candidate
-        else:
-            try:
-                for p in LABELS_DIR.glob(f"{video_name}*.json"):
-                    metadata_path = p
-                    break
-            except Exception:
-                pass
+        other = find_metadata_path(video_name)
+        if other is not None:
+            metadata_path = other
     
     if not metadata_path.exists():
         # Return sample metadata structure if no real metadata exists

@@ -34,15 +34,19 @@ def analyze_video(file_path):
     with open(file_path, "rb") as f:
         input_content = f.read()
 
-    operation = client.annotate_video(
-        request={
-            "features": FEATURES,
-            "input_content": input_content
-        }
-    )
+    try:
+        operation = client.annotate_video(
+            request={
+                "features": FEATURES,
+                "input_content": input_content
+            }
+        )
+        print(f"Processing {file_path}...")
+        result = operation.result(timeout=600)
+    except Exception as e:
+        print(f"API error processing {file_path}: {e}")
+        raise
 
-    print(f"Processing {file_path}...")
-    result = operation.result(timeout=600)
     annotations = result.annotation_results[0]
 
     output = {

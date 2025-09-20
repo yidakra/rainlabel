@@ -27,7 +27,7 @@ function LabelsList({ labels, searchQuery, onSearchChange, onLabelClick, activeL
           <p>No labels found</p>
         ) : (
           labels.map((label, index) => (
-            <div key={index} className={`label-item ${isLabelActive(label) ? 'active' : ''}`}>
+            <div key={label.id || `${label.description}-${index}`} className={`label-item ${isLabelActive(label) ? 'active' : ''}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => toggleExpand(index)}>
                 <div>
                   <strong>{label.description}</strong>
@@ -68,3 +68,5 @@ function formatTime(seconds) {
 }
 
 export default LabelsList;
+
+
