@@ -63,7 +63,7 @@ jobs:
           safety check -r backend/requirements.txt --full-report
 
       - name: OSV Scanner
-        uses: google/osv-scanner-action@v1.8.5
+        uses: google/osv-scanner-action@v1
         with:
           scan: |-
             backend/requirements.txt
