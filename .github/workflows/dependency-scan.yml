@@ -62,10 +62,13 @@ jobs:
           python -m pip install safety
           safety check -r backend/requirements.txt --full-report
 
+      - name: Install OSV Scanner
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL https://raw.githubusercontent.com/google/osv-scanner/main/install.sh | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: OSV Scanner
-        uses: google/osv-scanner-action@main
-        with:
-          scan: |-
-            backend/requirements.txt
-            backend/requirements.lock
+        run: |
+          osv-scanner -r backend
 
