@@ -33,7 +33,7 @@
    ```bash
    python analyze_video.py your_video.mp4
    ```
-3. Metadata will be saved to `metadata/your_video.json`
+3. Metadata will be saved next to the video as a sidecar JSON: `videos/your_video.mp4.json`
 
 ## API Documentation
 
@@ -43,6 +43,5 @@ Visit http://localhost:8000/docs for interactive API documentation.
 
 - `backend/` - FastAPI server with video and metadata endpoints
 - `frontend/` - React application with video player and analysis UI
-- `videos/` - Video file storage
-- `metadata/` - JSON metadata files from video analysis
+- `videos/` - Video file storage and sidecar JSON metadata
 - `analyze_video.py` - Google Cloud Video Intelligence integration script

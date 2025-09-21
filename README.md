@@ -32,8 +32,7 @@ rainlabel/
 │   │   └── index.css
 │   ├── public/
 │   └── package.json
-├── videos/           # Video files storage
-├── metadata/         # JSON metadata files
+├── videos/           # Video files storage and sidecar JSON metadata
 └── README.md
 ```
 
@@ -41,7 +40,7 @@ rainlabel/
 
 - `GET /videos` - List all available videos
 - `GET /video/<name>` - Get specific video information
-- `GET /metadata/<name>` - Get video analysis metadata
+- `GET /metadata/<name>` - Get video analysis metadata (reads sidecar `<videos>/<name>.<ext>.json`)
 - `GET /static/videos/<filename>` - Serve video files
 
 ## Getting Started
@@ -97,7 +96,7 @@ We temporarily pin `esbuild` via the `overrides` field in `frontend/package.json
 ### Adding Videos
 
 1. Place video files (MP4, AVI, MOV, MKV, WebM) in the `videos/` directory
-2. Add corresponding metadata JSON files in the `metadata/` directory
+2. Metadata is stored as sidecar JSON next to the video: `videos/<name>.<ext>.json`
 
 ### Metadata Format
 

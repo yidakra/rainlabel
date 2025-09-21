@@ -62,8 +62,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Mount static files
 VIDEOS_DIR = BASE_DIR / "videos"
-METADATA_DIR = BASE_DIR / "metadata"
-LABELS_DIR = BASE_DIR / "labels"
 
 # Supported video extensions
 VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
@@ -79,7 +77,7 @@ def _is_child_path(child: Path, parent: Path) -> bool:
 
 
 def find_metadata_path(stem: str) -> Optional[Path]:
-    """Locate metadata for a given video stem across known locations.
+    """Locate metadata sidecar for a given video stem under `videos/` only.
 
     Returns a Path if found, otherwise None. Includes basic input validation and
     containment checks to avoid path traversal.
@@ -97,40 +95,21 @@ def find_metadata_path(stem: str) -> Optional[Path]:
     if not valid:
         return None
 
-    # 1) metadata directory exact match
-    md_candidate = (METADATA_DIR / f"{stem}.json").resolve()
-    if md_candidate.exists() and _is_child_path(md_candidate, METADATA_DIR.resolve()):
-        return md_candidate
-
-    # 2) sidecar next to any matching video file
+    # sidecar next to any matching video file
     for ext in VIDEO_EXTENSIONS:
         vp = (VIDEOS_DIR / f"{stem}{ext}").resolve()
         if vp.exists() and _is_child_path(vp, VIDEOS_DIR.resolve()):
             sidecar = Path(str(vp) + ".json").resolve()
             if sidecar.exists() and _is_child_path(sidecar, VIDEOS_DIR.resolve()):
                 return sidecar
-
-    # 3) labels directory (exact or prefix match)
-    lb_candidate = (LABELS_DIR / f"{stem}.json").resolve()
-    if lb_candidate.exists() and _is_child_path(lb_candidate, LABELS_DIR.resolve()):
-        return lb_candidate
-    try:
-        for p in LABELS_DIR.glob(f"{stem}*.json"):
-            pr = p.resolve()
-            if pr.exists() and _is_child_path(pr, LABELS_DIR.resolve()):
-                return pr
-    except Exception:
-        pass
     return None
 
 def has_metadata_for(stem: str) -> bool:
     """Return True if any metadata exists for the given video stem."""
     return find_metadata_path(stem) is not None
 
-# Ensure directories exist
+# Ensure directory exists
 VIDEOS_DIR.mkdir(exist_ok=True)
-METADATA_DIR.mkdir(exist_ok=True)
-LABELS_DIR.mkdir(exist_ok=True)
 
 if VIDEOS_DIR.exists():
     app.mount("/static/videos", StaticFiles(directory=VIDEOS_DIR), name="videos")
@@ -212,31 +191,11 @@ async def get_metadata(video_name: str) -> Dict[str, Any]:
             logger.warning("Forbidden access to video_name not in allow-list: %r", sanitized)
             raise HTTPException(status_code=403, detail="Forbidden")
 
-    # 3) Build canonical path under METADATA_DIR and ensure it stays within
-    base_resolved = METADATA_DIR.resolve()
-    candidate_resolved = (METADATA_DIR / f"{sanitized}.json").resolve()
-    try:
-        # Python 3.9+
-        is_inside = candidate_resolved.is_relative_to(base_resolved)  # type: ignore[attr-defined]
-    except Exception:
-        base_posix = base_resolved.as_posix().rstrip("/") + "/"
-        is_inside = candidate_resolved.as_posix().startswith(base_posix)
-    if not is_inside:
-        logger.warning(
-            "Path traversal attempt blocked: base=%s, candidate=%s, input=%r",
-            str(base_resolved), str(candidate_resolved), video_name,
-        )
-        raise HTTPException(status_code=400, detail="Invalid video name")
-
     # Use sanitized name going forward
     video_name = sanitized
-    metadata_path = candidate_resolved
-    if not metadata_path.exists():
-        other = find_metadata_path(video_name)
-        if other is not None:
-            metadata_path = other
-    
-    if not metadata_path.exists():
+    metadata_path = find_metadata_path(video_name)
+
+    if metadata_path is None or not metadata_path.exists():
         # Return sample metadata structure if no real metadata exists
         return {
             "video_name": video_name,
