@@ -42,19 +42,25 @@ function Timeline({ duration, currentTime, labels, onTimelineClick }) {
         
         {/* Label segments */}
         {labels.map((label, labelIndex) => (
-          label.segments && label.segments.map((segment, segmentIndex) => (
+          label.segments && label.segments.map((segment, segmentIndex) => {
+            const start = Math.max(0, Math.min(duration, segment.start || 0));
+            const end = Math.max(0, Math.min(duration, segment.end || 0));
+            const widthPct = duration > 0 ? ((end - start) / duration) * 100 : 0;
+            if (widthPct <= 0) return null;
+            return (
             <div
               key={`${labelIndex}-${segmentIndex}`}
               className="timeline-highlight"
               style={{
-                left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
-                width: `${duration > 0 ? ((segment.end - segment.start) / duration) * 100 : 0}%`,
+                left: `${duration > 0 ? (start / duration) * 100 : 0}%`,
+                width: `${widthPct}%`,
                 backgroundColor: `hsl(${labelIndex * 137.5 % 360}, 70%, 70%)`,
                 opacity: 0.7
               }}
-              title={`${label.description} ${(typeof segment.confidence === 'number') ? `(${(segment.confidence * 100).toFixed(0)}%)` : ''}: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}
+              title={`${label.description} ${(typeof segment.confidence === 'number') ? `(${(segment.confidence * 100).toFixed(0)}%)` : ''}: ${formatTime(start)} - ${formatTime(end)}`}
             />
-          ))
+            );
+          })
         ))}
       </div>
       

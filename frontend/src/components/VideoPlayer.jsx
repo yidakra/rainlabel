@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import LabelsList from './LabelsList';
 import Timeline from './Timeline';
-import ActiveLabelPanel from './ActiveLabelPanel';
+import InsightsPanel from './InsightsPanel';
 
 function VideoPlayer({ video, onBack }) {
   const videoRef = useRef(null);
@@ -24,43 +24,26 @@ function VideoPlayer({ video, onBack }) {
   const fetchMetadata = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/metadata/${encodeURIComponent(video.name)}`, {
-        timeout: 10000
-      });
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(
+        `${apiBase}/metadata/${encodeURIComponent(video.name)}`,
+        {
+          timeout: 10000,
+          params: { t: Date.now() },
+          headers: { 'Cache-Control': 'no-cache' }
+        }
+      );
       setMetadata(response.data);
     } catch (err) {
-      console.warn('Failed to fetch metadata, using sample data');
-      // Create sample metadata for demo purposes
+      console.error('Failed to fetch metadata:', err);
       setMetadata({
         video_name: video.name,
-        labels: [
-          {
-            description: "Person",
-            confidence: 0.95,
-            segments: [
-              { start: 0, end: 30 },
-              { start: 45, end: 120 }
-            ]
-          },
-          {
-            description: "Car",
-            confidence: 0.88,
-            segments: [
-              { start: 15, end: 60 }
-            ]
-          },
-          {
-            description: "Building",
-            confidence: 0.92,
-            segments: [
-              { start: 0, end: 180 }
-            ]
-          }
-        ],
+        labels: [],
         shots: [],
         objects: [],
         text: [],
-        faces: []
+        faces: [],
+        error: 'Failed to load metadata'
       });
     } finally {
       setLoading(false);
@@ -155,9 +138,10 @@ function VideoPlayer({ video, onBack }) {
           onTimelineClick={handleTimelineClick}
         />
         
-        <ActiveLabelPanel 
-          activeLabels={activeLabels}
+        <InsightsPanel 
+          metadata={metadata}
           currentTime={currentTime}
+          duration={duration}
         />
       </div>
     </div>

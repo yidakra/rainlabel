@@ -84,7 +84,10 @@ def find_metadata_path(stem: str) -> Optional[Path]:
     """
     if not stem:
         return None
-    if "\x00" in stem or any(sep in stem for sep in ("/", "\\", os.sep, os.altsep or "")):
+    separators = {"/", "\\", os.sep}
+    if os.altsep:
+        separators.add(os.altsep)
+    if "\x00" in stem or any(sep in stem for sep in separators):
         return None
     valid = False
     try:
@@ -168,7 +171,10 @@ async def get_metadata(video_name: str) -> Dict[str, Any]:
     """Get video analysis metadata"""
     # 1) Validate and canonicalize the input at the boundary
     sanitized = (video_name or "").strip()
-    if "\x00" in sanitized or any(sep in sanitized for sep in ("/", "\\", os.sep, os.altsep or "")):
+    separators = {"/", "\\", os.sep}
+    if os.altsep:
+        separators.add(os.altsep)
+    if "\x00" in sanitized or any(sep in sanitized for sep in separators):
         logger.warning("Rejected video_name with path separators or NUL byte: %r", video_name)
         raise HTTPException(status_code=400, detail="Invalid video name")
 
