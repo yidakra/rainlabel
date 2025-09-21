@@ -1,0 +1,5 @@
+fastapi>=0.109.1
+uvicorn[standard]==0.35.0
+python-multipart==0.0.20
+google-cloud-videointelligence>=2.14.0
+# Starlette is a transitive dependency of FastAPI; FastAPI>=0.109.1 pulls a patched Starlette
