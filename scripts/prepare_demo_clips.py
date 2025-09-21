@@ -2,10 +2,8 @@
 import os
 import sys
 import subprocess
-import shlex
 import glob
 import random
-import math
 from pathlib import Path
 from typing import List, Optional
 
@@ -146,6 +144,11 @@ def make_clip(input_path: Path, start_s: int, out_path: Path) -> None:
         str(CLIP_SECONDS),
         "-i",
         str(input_path),
+        # Normalize timestamps so clips start at t=0
+        "-reset_timestamps",
+        "1",
+        "-avoid_negative_ts",
+        "make_zero",
         "-c:v",
         "libx264",
         "-crf",
@@ -197,22 +200,34 @@ def main() -> None:
             except Exception as e:
                 print(f"[error] failed creating {clip_name}: {e}", file=sys.stderr)
 
-        # Auto-run analyzer on generated clips
-        try:
-            analyze = PROJECT_ROOT / "analyze_video.py"
-            if analyze.exists():
-                print("\n[analyze] Running analyzer on created clips...")
-                run([sys.executable, str(analyze)])
-        except subprocess.CalledProcessError as e:
-            print(f"[warn] analyzer run failed:\n{e.stdout}", file=sys.stderr)
+        # Auto-run analyzer on generated clips (opt-in via env)
+        if os.environ.get("RUN_ANALYZER") == "1":
+            try:
+                analyze = PROJECT_ROOT / "scripts" / "analyze_video.py"
+                if analyze.exists():
+                    print("\n[analyze] Running analyzer on created clips...")
+                    run([sys.executable, str(analyze)])
+            except KeyboardInterrupt:
+                print("\n[analyze] Canceled by user (Ctrl-C)")
+                return
+            except subprocess.CalledProcessError as e:
+                print(f"[warn] analyzer run failed:\n{e.stdout}", file=sys.stderr)
+        else:
+            print("\n[analyze] Skipping auto-run (set RUN_ANALYZER=1 to enable).")
 
     print("\nAll done. Your demo clips are in:")
     print(f"  {VIDEOS_DIR}")
     print("Run the analyzer to create sidecar JSONs when ready:")
-    print(f"  python {PROJECT_ROOT / 'analyze_video.py'}")
+    print(f"  python {PROJECT_ROOT / 'scripts' / 'analyze_video.py'}")
+    print("Or re-run this script with auto-analyze enabled:")
+    print("  RUN_ANALYZER=1 python scripts/prepare_demo_clips.py")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAborted by user (Ctrl-C)")
+        sys.exit(130)
 
 

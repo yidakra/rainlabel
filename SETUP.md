@@ -31,7 +31,7 @@
 1. Place video files (.mp4, .avi, .mov, .mkv, .webm) in the `videos/` directory
 2. Run video analysis (optional):
    ```bash
-   python analyze_video.py your_video.mp4
+   python scripts/analyze_video.py your_video.mp4
    ```
 3. Metadata will be saved next to the video as a sidecar JSON: `videos/your_video.mp4.json`
 
@@ -44,4 +44,4 @@ Visit http://localhost:8000/docs for interactive API documentation.
 - `backend/` - FastAPI server with video and metadata endpoints
 - `frontend/` - React application with video player and analysis UI
 - `videos/` - Video file storage and sidecar JSON metadata
-- `analyze_video.py` - Google Cloud Video Intelligence integration script
+- `scripts/analyze_video.py` - Google Cloud Video Intelligence integration script
