@@ -8,7 +8,29 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_VIDEOS = (PROJECT_ROOT / "videos").as_posix()
 VIDEO_DIR = os.environ.get("VIDEO_DIR", DEFAULT_VIDEOS)
 
-client = videointelligence.VideoIntelligenceServiceClient()
+_CLIENT = None
+
+def get_client():
+    """Lazily initialize the Video Intelligence client.
+
+    Defers auth and any subprocess calls until needed, and allows
+    KeyboardInterrupt to gracefully abort without a long traceback.
+    """
+    global _CLIENT
+    if _CLIENT is None:
+        try:
+            _CLIENT = videointelligence.VideoIntelligenceServiceClient()
+        except KeyboardInterrupt:
+            print("Interrupted while initializing Video Intelligence client")
+            raise
+    return _CLIENT
+
+def _try_cancel(operation):
+    """Best-effort cancel for long-running operations on interrupt."""
+    try:
+        operation.cancel()
+    except Exception:
+        pass
 
 FEATURES = [
     videointelligence.Feature.LABEL_DETECTION,
@@ -39,6 +61,7 @@ def analyze_video(file_path):
         input_content = f.read()
 
     try:
+        client = get_client()
         # Enrich results using detection configs; be compatible across library versions
         vc_kwargs = {}
 
@@ -100,7 +123,12 @@ def analyze_video(file_path):
 
         print(f"Processing {file_path} (main features: labels, objects, text, etc.)...")
         operation_main = client.annotate_video(request=request_main)
-        result_main = operation_main.result(timeout=600)
+        try:
+            result_main = operation_main.result(timeout=600)
+        except KeyboardInterrupt:
+            _try_cancel(operation_main)
+            print("Interrupted during main analysis; cancelling request...")
+            raise
 
         # Second request: Speech transcription only
         speech_config = videointelligence.SpeechTranscriptionConfig(
@@ -115,7 +143,12 @@ def analyze_video(file_path):
 
         print(f"Processing {file_path} (speech transcription)...")
         operation_speech = client.annotate_video(request=request_speech)
-        result_speech = operation_speech.result(timeout=600)
+        try:
+            result_speech = operation_speech.result(timeout=600)
+        except KeyboardInterrupt:
+            _try_cancel(operation_speech)
+            print("Interrupted during speech transcription; cancelling request...")
+            raise
 
         # Use main result as base (has labels, objects, text, etc.)
         result = result_main
@@ -383,40 +416,43 @@ def process_video_argument(arg):
 
 if __name__ == "__main__":
     import sys
-    
-    if len(sys.argv) > 1:
-        # Process specific file(s) or video base name(s) provided as arguments
-        all_files_to_process = []
-        
-        for arg in sys.argv[1:]:
-            files = process_video_argument(arg)
-            all_files_to_process.extend(files)
-        
-        # Process all found files
-        for file_path in all_files_to_process:
-            try:
-                size_bytes = os.path.getsize(file_path)
-                if size_bytes > MAX_UPLOAD_BYTES:
-                    print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
-                    continue
-                analyze_video(file_path)
-            except Exception as e:
-                print(f"Error with {file_path}: {e}")
-    else:
-        # Process all videos in the directory
-        for fname in os.listdir(VIDEO_DIR):
-            if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
-                file_path = os.path.join(VIDEO_DIR, fname)
+    try:
+        if len(sys.argv) > 1:
+            # Process specific file(s) or video base name(s) provided as arguments
+            all_files_to_process = []
+            
+            for arg in sys.argv[1:]:
+                files = process_video_argument(arg)
+                all_files_to_process.extend(files)
+            
+            # Process all found files
+            for file_path in all_files_to_process:
                 try:
-                    try:
-                        size_bytes = os.path.getsize(file_path)
-                        if size_bytes > MAX_UPLOAD_BYTES:
-                            print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
-                            continue
-                    except OSError:
-                        pass
+                    size_bytes = os.path.getsize(file_path)
+                    if size_bytes > MAX_UPLOAD_BYTES:
+                        print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
+                        continue
                     analyze_video(file_path)
                 except Exception as e:
-                    print(f"Error with {fname}: {e}")
+                    print(f"Error with {file_path}: {e}")
+        else:
+            # Process all videos in the directory
+            for fname in os.listdir(VIDEO_DIR):
+                if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+                    file_path = os.path.join(VIDEO_DIR, fname)
+                    try:
+                        try:
+                            size_bytes = os.path.getsize(file_path)
+                            if size_bytes > MAX_UPLOAD_BYTES:
+                                print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
+                                continue
+                        except OSError:
+                            pass
+                        analyze_video(file_path)
+                    except Exception as e:
+                        print(f"Error with {fname}: {e}")
+    except KeyboardInterrupt:
+        print("Interrupted by user. Exiting.")
+        sys.exit(130)
 
 
