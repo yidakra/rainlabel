@@ -65,7 +65,7 @@ function App() {
     // Push to browser history
     window.history.pushState(
       { videoName: video.name }, 
-      `RainLabel - ${video.name}`, 
+      `TV Rain - ${video.name}`, 
       `?video=${encodeURIComponent(video.name)}`
     );
   };
@@ -75,7 +75,7 @@ function App() {
     // Push to browser history
     window.history.pushState(
       {}, 
-      'RainLabel - Video List', 
+      'TV Rain - Video List', 
       window.location.pathname
     );
   };

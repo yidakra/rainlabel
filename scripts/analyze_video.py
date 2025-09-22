@@ -344,23 +344,64 @@ def analyze_video(file_path):
 
     print(f"Saved annotations to {json_file}")
 
+def find_clips_for_video(video_base_name):
+    """Find all clips for a given video base name (e.g., 'jplmUJNfzJA')"""
+    clips = []
+    for fname in os.listdir(VIDEO_DIR):
+        if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+            # Check if this file matches the pattern: {base_name}_clip{number}.{ext}
+            if fname.startswith(f"{video_base_name}_clip"):
+                clips.append(os.path.join(VIDEO_DIR, fname))
+    
+    # Sort clips by clip number
+    clips.sort(key=lambda x: x)
+    return clips
+
+def process_video_argument(arg):
+    """Process a single argument - could be a file path or video base name"""
+    if os.path.exists(arg):
+        # It's a direct file path
+        return [arg]
+    
+    # Check if it's a video base name (like 'videos/jplmUJNfzJA')
+    if arg.startswith('videos/'):
+        video_base_name = arg[7:]  # Remove 'videos/' prefix
+    else:
+        video_base_name = arg
+    
+    # Find all clips for this video base name
+    clips = find_clips_for_video(video_base_name)
+    if clips:
+        print(f"Found {len(clips)} clips for video '{video_base_name}':")
+        for clip in clips:
+            print(f"  - {os.path.basename(clip)}")
+        return clips
+    
+    # If no clips found, maybe it's a malformed path
+    print(f"No clips found for video base name '{video_base_name}' and path doesn't exist: {arg}")
+    return []
+
 if __name__ == "__main__":
     import sys
     
     if len(sys.argv) > 1:
-        # Process specific file(s) provided as arguments
-        for file_path in sys.argv[1:]:
-            if os.path.exists(file_path):
-                try:
-                    size_bytes = os.path.getsize(file_path)
-                    if size_bytes > MAX_UPLOAD_BYTES:
-                        print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
-                        continue
-                    analyze_video(file_path)
-                except Exception as e:
-                    print(f"Error with {file_path}: {e}")
-            else:
-                print(f"File not found: {file_path}")
+        # Process specific file(s) or video base name(s) provided as arguments
+        all_files_to_process = []
+        
+        for arg in sys.argv[1:]:
+            files = process_video_argument(arg)
+            all_files_to_process.extend(files)
+        
+        # Process all found files
+        for file_path in all_files_to_process:
+            try:
+                size_bytes = os.path.getsize(file_path)
+                if size_bytes > MAX_UPLOAD_BYTES:
+                    print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
+                    continue
+                analyze_video(file_path)
+            except Exception as e:
+                print(f"Error with {file_path}: {e}")
     else:
         # Process all videos in the directory
         for fname in os.listdir(VIDEO_DIR):

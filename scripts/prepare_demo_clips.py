@@ -18,6 +18,9 @@ CLIPS_PER_VIDEO = 5
 
 YOUTUBE_URLS: List[str] = [
     "https://www.youtube.com/watch?v=f4ANM4paUJo&t=1754s",
+    "https://www.youtube.com/live/jplmUJNfzJA",
+    "https://www.youtube.com/live/smuWgA3q7aU"
+
 ]
 
 
