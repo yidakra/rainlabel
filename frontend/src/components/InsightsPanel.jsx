@@ -57,30 +57,7 @@ function InsightsPanel({ metadata, currentTime, duration }) {
     return items.slice(0, 6);
   })();
 
-  const speechSnippet = (() => {
-    // Check if speech data exists at all
-    if (!metadata?.speech || metadata.speech.length === 0) {
-      return null; // No speech data available
-    }
-    
-    // Collect words within ±5s around current time
-    const windowS = 5;
-    const words = [];
-    for (const altGroup of metadata.speech) {
-      for (const w of altGroup.words || []) {
-        const s = w.start ?? 0;
-        const e = w.end ?? 0;
-        if (s <= currentTime + windowS && e >= currentTime - windowS) {
-          words.push({ t: w.word, s });
-        }
-      }
-    }
-    words.sort((a, b) => a.s - b.s);
-    const snippet = words.map((w) => w.t).join(' ').trim();
-    return snippet.length > 0 ? snippet : null;
-  })();
-
-  const hasSpeechData = metadata?.speech && metadata.speech.length > 0;
+  // Speech transcript is now shown under the video within the OCR panel
 
   const explicitAtTime = (() => {
     // Show last explicit frame before time
@@ -111,18 +88,6 @@ function InsightsPanel({ metadata, currentTime, duration }) {
               </div>
             </div>
           ))
-        )}
-      </section>
-
-
-      <section style={{ marginTop: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Speech</div>
-        {!hasSpeechData ? (
-          <div style={{ color: '#666' }}>No speech transcription available for this video</div>
-        ) : speechSnippet ? (
-          <div className="label-item">{speechSnippet}</div>
-        ) : (
-          <div style={{ color: '#666' }}>No transcript near this time</div>
         )}
       </section>
 

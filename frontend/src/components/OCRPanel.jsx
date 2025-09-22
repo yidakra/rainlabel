@@ -7,6 +7,25 @@ function OCRPanel({ metadata, currentTime }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Build a local speech snippet around current time (±5s)
+  const speechSnippet = (() => {
+    if (!metadata?.speech || metadata.speech.length === 0) return null;
+    const windowS = 5;
+    const words = [];
+    for (const altGroup of metadata.speech) {
+      for (const w of altGroup.words || []) {
+        const s = w.start ?? 0;
+        const e = w.end ?? 0;
+        if (s <= currentTime + windowS && e >= currentTime - windowS) {
+          words.push({ t: w.word, s });
+        }
+      }
+    }
+    words.sort((a, b) => a.s - b.s);
+    const snippet = words.map((w) => w.t).join(' ').trim();
+    return snippet.length > 0 ? snippet : null;
+  })();
+
   const activeTexts = (() => {
     const items = [];
     for (const t of metadata?.text || []) {
@@ -19,12 +38,24 @@ function OCRPanel({ metadata, currentTime }) {
         }
       }
     }
-    return items.slice(0, 8); // Show more items since this has its own panel
+    return items.slice(0, 8);
   })();
 
   return (
     <div className="ocr-panel">
-      <h3>On-Screen Text (OCR)</h3>
+      {/* Speech transcript (windowed snippet) */}
+      {metadata?.speech && metadata.speech.length > 0 ? (
+        speechSnippet ? (
+          <div className="label-item">{speechSnippet}</div>
+        ) : (
+          <div style={{ color: '#666', fontSize: '14px' }}>No transcript near this time</div>
+        )
+      ) : (
+        <div style={{ color: '#666', fontSize: '14px' }}>No speech transcription available for this video</div>
+      )}
+
+      {/* OCR texts */}
+      <div style={{ fontWeight: 600, marginTop: 12, marginBottom: 6 }}>On-Screen Text (OCR)</div>
       {activeTexts.length === 0 ? (
         <div style={{ color: '#666', fontSize: '14px' }}>No text detected at current time</div>
       ) : (

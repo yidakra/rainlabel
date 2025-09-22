@@ -3,12 +3,19 @@ import json
 from pathlib import Path
 from google.cloud import videointelligence_v1 as videointelligence
 
+# Optional import; only needed when uploading to GCS
+try:
+    from google.cloud import storage as gcs_storage
+except Exception:
+    gcs_storage = None
+
 # Resolve project root and videos directory; allow env override
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_VIDEOS = (PROJECT_ROOT / "videos").as_posix()
 VIDEO_DIR = os.environ.get("VIDEO_DIR", DEFAULT_VIDEOS)
 
 _CLIENT = None
+_STORAGE_CLIENT = None
 
 def get_client():
     """Lazily initialize the Video Intelligence client.
@@ -31,6 +38,50 @@ def _try_cancel(operation):
         operation.cancel()
     except Exception:
         pass
+
+def get_storage_client():
+    """Lazily initialize the Cloud Storage client (only if needed)."""
+    global _STORAGE_CLIENT
+    if _STORAGE_CLIENT is None:
+        if gcs_storage is None:
+            raise RuntimeError(
+                "google-cloud-storage is not installed; cannot upload to GCS. "
+                "Install dependency and set GCS_BUCKET to enable uploads."
+            )
+        try:
+            _STORAGE_CLIENT = gcs_storage.Client()
+        except KeyboardInterrupt:
+            print("Interrupted while initializing Cloud Storage client")
+            raise
+    return _STORAGE_CLIENT
+
+def upload_to_gcs(local_path):
+    """Upload a local file to GCS and return gs:// URI.
+
+    Requires env var GCS_BUCKET; optional GCS_PREFIX for path prefix.
+    """
+    bucket_name = os.environ.get("GCS_BUCKET")
+    if not bucket_name:
+        raise RuntimeError("GCS_BUCKET env var is required to upload videos to GCS")
+    prefix = os.environ.get("GCS_PREFIX", "video-intel")
+    # Normalize path components
+    prefix_clean = prefix.strip("/")
+    blob_name = f"{prefix_clean}/{os.path.basename(local_path)}" if prefix_clean else os.path.basename(local_path)
+    client = get_storage_client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    print(f"Uploading to gs://{bucket_name}/{blob_name} ...")
+    try:
+        blob.upload_from_filename(local_path)
+    except KeyboardInterrupt:
+        # Best effort cleanup of partially uploaded object
+        try:
+            blob.delete()
+        except Exception:
+            pass
+        print("Interrupted during upload; aborted and cleaned up if possible")
+        raise
+    return f"gs://{bucket_name}/{blob_name}"
 
 FEATURES = [
     videointelligence.Feature.LABEL_DETECTION,
@@ -56,9 +107,39 @@ def time_offset_to_sec(time_offset):
         return float(time_offset.seconds) + float(time_offset.microseconds) / 1e6
     return 0.0
 
+def _get_operation_timeout():
+    """Return timeout (seconds) for LRO result(), or None for no timeout.
+
+    Controlled via env var VI_TIMEOUT_SECONDS. Values <=0 or invalid -> None.
+    """
+    raw = os.environ.get("VI_TIMEOUT_SECONDS")
+    if not raw:
+        return None
+    try:
+        val = float(raw)
+        if val <= 0:
+            return None
+        return val
+    except Exception:
+        return None
+
 def analyze_video(file_path):
-    with open(file_path, "rb") as f:
-        input_content = f.read()
+    # Decide whether to upload to GCS or send inline bytes
+    force_gcs = os.environ.get("FORCE_GCS", "false").lower() in ("1", "true", "yes")
+    size_bytes = None
+    try:
+        size_bytes = os.path.getsize(file_path)
+    except OSError:
+        pass
+
+    use_gcs = force_gcs or (size_bytes is not None and size_bytes > MAX_UPLOAD_BYTES)
+    input_content = None
+    input_uri = None
+    if use_gcs:
+        input_uri = upload_to_gcs(file_path)
+    else:
+        with open(file_path, "rb") as f:
+            input_content = f.read()
 
     try:
         client = get_client()
@@ -105,26 +186,28 @@ def analyze_video(file_path):
         except Exception:
             pass
 
-        request_payload = {
-            "features": FEATURES,
-            "input_content": input_content,
-        }
+        request_payload = {"features": FEATURES}
+        if input_uri:
+            request_payload["input_uri"] = input_uri
+        else:
+            request_payload["input_content"] = input_content
         if vc_kwargs:
             request_payload["video_context"] = videointelligence.VideoContext(**vc_kwargs)
 
         # First request: All features EXCEPT speech transcription
         features_no_speech = [f for f in FEATURES if f != videointelligence.Feature.SPEECH_TRANSCRIPTION]
-        request_main = {
-            "features": features_no_speech,
-            "input_content": input_content,
-        }
+        request_main = {"features": features_no_speech}
+        if input_uri:
+            request_main["input_uri"] = input_uri
+        else:
+            request_main["input_content"] = input_content
         if vc_kwargs_no_speech := {k: v for k, v in vc_kwargs.items() if k != "speech_transcription_config"}:
             request_main["video_context"] = videointelligence.VideoContext(**vc_kwargs_no_speech)
 
         print(f"Processing {file_path} (main features: labels, objects, text, etc.)...")
         operation_main = client.annotate_video(request=request_main)
         try:
-            result_main = operation_main.result(timeout=600)
+            result_main = operation_main.result(timeout=_get_operation_timeout())
         except KeyboardInterrupt:
             _try_cancel(operation_main)
             print("Interrupted during main analysis; cancelling request...")
@@ -137,14 +220,17 @@ def analyze_video(file_path):
         )
         request_speech = {
             "features": [videointelligence.Feature.SPEECH_TRANSCRIPTION],
-            "input_content": input_content,
             "video_context": videointelligence.VideoContext(speech_transcription_config=speech_config)
         }
+        if input_uri:
+            request_speech["input_uri"] = input_uri
+        else:
+            request_speech["input_content"] = input_content
 
         print(f"Processing {file_path} (speech transcription)...")
         operation_speech = client.annotate_video(request=request_speech)
         try:
-            result_speech = operation_speech.result(timeout=600)
+            result_speech = operation_speech.result(timeout=_get_operation_timeout())
         except KeyboardInterrupt:
             _try_cancel(operation_speech)
             print("Interrupted during speech transcription; cancelling request...")
@@ -428,10 +514,6 @@ if __name__ == "__main__":
             # Process all found files
             for file_path in all_files_to_process:
                 try:
-                    size_bytes = os.path.getsize(file_path)
-                    if size_bytes > MAX_UPLOAD_BYTES:
-                        print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
-                        continue
                     analyze_video(file_path)
                 except Exception as e:
                     print(f"Error with {file_path}: {e}")
@@ -441,13 +523,6 @@ if __name__ == "__main__":
                 if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
                     file_path = os.path.join(VIDEO_DIR, fname)
                     try:
-                        try:
-                            size_bytes = os.path.getsize(file_path)
-                            if size_bytes > MAX_UPLOAD_BYTES:
-                                print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
-                                continue
-                        except OSError:
-                            pass
                         analyze_video(file_path)
                     except Exception as e:
                         print(f"Error with {fname}: {e}")

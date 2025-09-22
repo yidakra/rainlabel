@@ -126,13 +126,8 @@ function VideoPlayer({ video, onBack }) {
             currentTime={currentTime}
           />
 
-          <div className="bottom-controls">
-            <LabelsList 
-              labels={metadata?.labels || []}
-              onLabelClick={handleLabelClick}
-              activeLabels={activeLabels}
-            />
-            
+          {/* Timeline moved to sit below transcript/OCR and span full width */}
+          <div className="timeline-wrapper">
             <Timeline 
               duration={duration}
               currentTime={currentTime}
@@ -148,6 +143,15 @@ function VideoPlayer({ video, onBack }) {
             currentTime={currentTime}
             duration={duration}
           />
+
+          {/* Labels moved under insights panel */}
+          <div style={{ marginTop: 15 }}>
+            <LabelsList 
+              labels={metadata?.labels || []}
+              onLabelClick={handleLabelClick}
+              activeLabels={activeLabels}
+            />
+          </div>
         </div>
       </div>
     </div>

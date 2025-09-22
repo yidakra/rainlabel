@@ -110,6 +110,8 @@ body {
 .insights-section {
   width: 350px;
   min-width: 350px;
+  display: flex;
+  flex-direction: column;
 }
 
 .labels-panel, .timeline-panel {
@@ -126,7 +128,6 @@ body {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  height: 100%;
   overflow-y: auto;
 }
 
@@ -219,4 +220,15 @@ body {
 
 .back-button:hover {
   background: #5a6268;
+}
+
+/* Let labels expand to use remaining space in the insights column */
+.insights-section .labels-panel {
+  max-height: none;
+  flex: 1 1 auto;
+}
+
+/* Add small spacing between OCR and Timeline panels */
+.timeline-wrapper {
+  margin-top: 12px;
 }

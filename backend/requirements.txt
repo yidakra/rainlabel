@@ -2,4 +2,6 @@ fastapi>=0.109.1
 uvicorn[standard]==0.35.0
 python-multipart==0.0.20
 google-cloud-videointelligence==2.16.2
+# Uploading long videos to GCS for analysis
+google-cloud-storage>=2.18.2
 # Starlette is a transitive dependency of FastAPI; FastAPI>=0.109.1 pulls a patched Starlette
