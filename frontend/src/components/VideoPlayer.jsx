@@ -3,6 +3,7 @@ import axios from 'axios';
 import LabelsList from './LabelsList';
 import Timeline from './Timeline';
 import InsightsPanel from './InsightsPanel';
+import OCRPanel from './OCRPanel';
 
 function VideoPlayer({ video, onBack }) {
   const videoRef = useRef(null);
@@ -10,7 +11,6 @@ function VideoPlayer({ video, onBack }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [activeLabels, setActiveLabels] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,9 +85,6 @@ function VideoPlayer({ video, onBack }) {
     }
   };
 
-  const filteredLabels = metadata?.labels?.filter(label =>
-    label.description.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
 
   if (loading) {
     return (
@@ -108,41 +105,50 @@ function VideoPlayer({ video, onBack }) {
         ← Back to Videos
       </button>
 
-      <div className="video-player-container">
-        <h2>{video.name}</h2>
-        <video
-          ref={videoRef}
-          className="video-player"
-          controls
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${video.path}`}
-        >
-          Your browser does not support the video tag.
-        </video>
-      </div>
+      <div className="video-layout">
+        <div className="video-section">
+          <div className="video-player-container">
+            <h2>{video.name}</h2>
+            <video
+              ref={videoRef}
+              className="video-player"
+              controls
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${video.path}`}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
 
-      <div className="video-controls">
-        <LabelsList 
-          labels={filteredLabels}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onLabelClick={handleLabelClick}
-          activeLabels={activeLabels}
-        />
+          <OCRPanel 
+            metadata={metadata}
+            currentTime={currentTime}
+          />
+
+          <div className="bottom-controls">
+            <LabelsList 
+              labels={metadata?.labels || []}
+              onLabelClick={handleLabelClick}
+              activeLabels={activeLabels}
+            />
+            
+            <Timeline 
+              duration={duration}
+              currentTime={currentTime}
+              labels={metadata?.labels || []}
+              onTimelineClick={handleTimelineClick}
+            />
+          </div>
+        </div>
         
-        <Timeline 
-          duration={duration}
-          currentTime={currentTime}
-          labels={metadata?.labels || []}
-          onTimelineClick={handleTimelineClick}
-        />
-        
-        <InsightsPanel 
-          metadata={metadata}
-          currentTime={currentTime}
-          duration={duration}
-        />
+        <div className="insights-section">
+          <InsightsPanel 
+            metadata={metadata}
+            currentTime={currentTime}
+            duration={duration}
+          />
+        </div>
       </div>
     </div>
   );

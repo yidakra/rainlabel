@@ -73,15 +73,11 @@ def analyze_video(file_path):
         except Exception:
             pass
 
-        # Speech transcription config (prefer Russian, allow English as alternative)
+        # Speech transcription config for Russian (following official example)
         try:
             vc_kwargs["speech_transcription_config"] = videointelligence.SpeechTranscriptionConfig(
                 language_code="ru-RU",
-                alternative_language_codes=["en-US"],
-                enable_automatic_punctuation=True,
-                enable_speaker_diarization=True,
-                diarization_speaker_count=2,
-                enable_word_time_offsets=True,
+                enable_automatic_punctuation=True
             )
         except Exception:
             pass
@@ -93,9 +89,50 @@ def analyze_video(file_path):
         if vc_kwargs:
             request_payload["video_context"] = videointelligence.VideoContext(**vc_kwargs)
 
-        operation = client.annotate_video(request=request_payload)
-        print(f"Processing {file_path}...")
-        result = operation.result(timeout=600)
+        # First request: All features EXCEPT speech transcription
+        features_no_speech = [f for f in FEATURES if f != videointelligence.Feature.SPEECH_TRANSCRIPTION]
+        request_main = {
+            "features": features_no_speech,
+            "input_content": input_content,
+        }
+        if vc_kwargs_no_speech := {k: v for k, v in vc_kwargs.items() if k != "speech_transcription_config"}:
+            request_main["video_context"] = videointelligence.VideoContext(**vc_kwargs_no_speech)
+
+        print(f"Processing {file_path} (main features: labels, objects, text, etc.)...")
+        operation_main = client.annotate_video(request=request_main)
+        result_main = operation_main.result(timeout=600)
+
+        # Second request: Speech transcription only
+        speech_config = videointelligence.SpeechTranscriptionConfig(
+            language_code="ru-RU",
+            enable_automatic_punctuation=True
+        )
+        request_speech = {
+            "features": [videointelligence.Feature.SPEECH_TRANSCRIPTION],
+            "input_content": input_content,
+            "video_context": videointelligence.VideoContext(speech_transcription_config=speech_config)
+        }
+
+        print(f"Processing {file_path} (speech transcription)...")
+        operation_speech = client.annotate_video(request=request_speech)
+        result_speech = operation_speech.result(timeout=600)
+
+        # Use main result as base (has labels, objects, text, etc.)
+        result = result_main
+        
+        # Add speech transcriptions from the speech-only request
+        if (result_speech.annotation_results and 
+            len(result_speech.annotation_results) > 0 and
+            hasattr(result_speech.annotation_results[0], 'speech_transcriptions')):
+            
+            # Ensure the main result has speech_transcriptions attribute
+            if not hasattr(result.annotation_results[0], 'speech_transcriptions'):
+                # Create empty speech_transcriptions if it doesn't exist
+                result.annotation_results[0].speech_transcriptions = []
+            
+            # Copy speech transcriptions from speech result to main result
+            result.annotation_results[0].speech_transcriptions = result_speech.annotation_results[0].speech_transcriptions
+            print(f"Added {len(result_speech.annotation_results[0].speech_transcriptions)} speech transcription segments")
     except Exception as e:
         print(f"API error processing {file_path}: {e}")
         raise
@@ -116,7 +153,11 @@ def analyze_video(file_path):
 
     # Segment-level labels
     try:
-        for label in annotations.segment_label_annotations:
+        segment_labels = getattr(annotations, "segment_label_annotations", [])
+        shot_labels = getattr(annotations, "shot_label_annotations", [])
+        print(f"Found {len(segment_labels)} segment labels and {len(shot_labels)} shot labels")
+        
+        for label in segment_labels:
             for seg in label.segments:
                 start = time_offset_to_sec(seg.segment.start_time_offset)
                 end = time_offset_to_sec(seg.segment.end_time_offset)
@@ -127,8 +168,23 @@ def analyze_video(file_path):
                     "start_time": start,
                     "end_time": end
                 })
-    except Exception:
-        pass
+                
+        # Also add shot-level labels
+        for label in shot_labels:
+            for seg in label.segments:
+                start = time_offset_to_sec(seg.segment.start_time_offset)
+                end = time_offset_to_sec(seg.segment.end_time_offset)
+                output["labels"].append({
+                    "description": label.entity.description,
+                    "category": [cat.description for cat in label.category_entities],
+                    "confidence": seg.confidence,
+                    "start_time": start,
+                    "end_time": end
+                })
+    except Exception as e:
+        print(f"Error processing labels: {e}")
+        import traceback
+        traceback.print_exc()
 
     # Object tracking
     try:
@@ -253,22 +309,33 @@ def analyze_video(file_path):
 
     # Speech transcription annotations
     try:
-        for st in annotations.speech_transcriptions:
-            for alt in getattr(st, "alternatives", []):
+        speech_transcriptions = getattr(annotations, "speech_transcriptions", [])
+        print(f"Found {len(speech_transcriptions)} speech transcription segments")
+        
+        for st in speech_transcriptions:
+            alternatives = getattr(st, "alternatives", [])
+            print(f"  Segment has {len(alternatives)} alternatives")
+            
+            for alt in alternatives:
                 speech_item = {
                     "transcript": getattr(alt, "transcript", ""),
                     "confidence": getattr(alt, "confidence", 0.0),
                     "words": []
                 }
-                for w in getattr(alt, "words", []):
+                words = getattr(alt, "words", [])
+                print(f"    Alternative has {len(words)} words: '{speech_item['transcript'][:50]}...'")
+                
+                for w in words:
                     speech_item["words"].append({
                         "word": getattr(w, "word", ""),
                         "start": time_offset_to_sec(getattr(w, "start_time", 0)),
                         "end": time_offset_to_sec(getattr(w, "end_time", 0)),
                     })
                 output["speech"].append(speech_item)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error processing speech transcriptions: {e}")
+        import traceback
+        traceback.print_exc()
 
     # Save to JSON
     json_file = file_path + ".json"
@@ -278,19 +345,37 @@ def analyze_video(file_path):
     print(f"Saved annotations to {json_file}")
 
 if __name__ == "__main__":
-    for fname in os.listdir(VIDEO_DIR):
-        if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
-            file_path = os.path.join(VIDEO_DIR, fname)
-            try:
+    import sys
+    
+    if len(sys.argv) > 1:
+        # Process specific file(s) provided as arguments
+        for file_path in sys.argv[1:]:
+            if os.path.exists(file_path):
                 try:
                     size_bytes = os.path.getsize(file_path)
                     if size_bytes > MAX_UPLOAD_BYTES:
-                        print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
+                        print(f"Skipping {file_path}: size {size_bytes} exceeds 500MB limit")
                         continue
-                except OSError:
-                    pass
-                analyze_video(file_path)
-            except Exception as e:
-                print(f"Error with {fname}: {e}")
+                    analyze_video(file_path)
+                except Exception as e:
+                    print(f"Error with {file_path}: {e}")
+            else:
+                print(f"File not found: {file_path}")
+    else:
+        # Process all videos in the directory
+        for fname in os.listdir(VIDEO_DIR):
+            if fname.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+                file_path = os.path.join(VIDEO_DIR, fname)
+                try:
+                    try:
+                        size_bytes = os.path.getsize(file_path)
+                        if size_bytes > MAX_UPLOAD_BYTES:
+                            print(f"Skipping {fname}: size {size_bytes} exceeds 500MB limit")
+                            continue
+                    except OSError:
+                        pass
+                    analyze_video(file_path)
+                except Exception as e:
+                    print(f"Error with {fname}: {e}")
 
 

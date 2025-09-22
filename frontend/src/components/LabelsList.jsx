@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function LabelsList({ labels, searchQuery, onSearchChange, onLabelClick, activeLabels }) {
+function LabelsList({ labels, onLabelClick, activeLabels }) {
   const [expanded, setExpanded] = useState({});
 
   const isLabelActive = (label) => {
@@ -14,16 +14,6 @@ function LabelsList({ labels, searchQuery, onSearchChange, onLabelClick, activeL
   return (
     <div className="labels-panel">
       <h3>Labels</h3>
-      <input
-        type="text"
-        className="search-bar"
-        placeholder="Search labels..."
-        aria-label="Search labels"
-        id="labels-search"
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
-      />
-      
       <div className="labels-list">
         {labels.length === 0 ? (
           <p>No labels found</p>

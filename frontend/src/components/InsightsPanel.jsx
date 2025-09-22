@@ -26,26 +26,47 @@ function InsightsPanel({ metadata, currentTime, duration }) {
     return null;
   })();
 
-  const activeTexts = (() => {
+
+  const activeObjects = (() => {
     const items = [];
-    for (const t of metadata?.text || []) {
-      for (const seg of t.segments || []) {
-        const s = seg.start ?? 0;
-        const e = seg.end ?? 0;
-        if (currentTime >= s && currentTime <= e) {
-          items.push({ text: t.text, start: s, end: e, confidence: seg.confidence });
-          break;
+    for (const obj of metadata?.objects || []) {
+      // Find the closest frame to current time
+      let closestFrame = null;
+      let minTimeDiff = Infinity;
+      
+      for (const frame of obj.frames || []) {
+        const frameTime = frame.time ?? 0;
+        const timeDiff = Math.abs(currentTime - frameTime);
+        
+        // Only consider frames within 0.5 seconds of current time
+        if (timeDiff <= 0.5 && timeDiff < minTimeDiff) {
+          minTimeDiff = timeDiff;
+          closestFrame = frame;
         }
+      }
+      
+      if (closestFrame) {
+        items.push({
+          entity: obj.entity,
+          confidence: obj.confidence,
+          time: closestFrame.time,
+          bbox: closestFrame.bbox
+        });
       }
     }
     return items.slice(0, 6);
   })();
 
   const speechSnippet = (() => {
+    // Check if speech data exists at all
+    if (!metadata?.speech || metadata.speech.length === 0) {
+      return null; // No speech data available
+    }
+    
     // Collect words within ±5s around current time
     const windowS = 5;
     const words = [];
-    for (const altGroup of metadata?.speech || []) {
+    for (const altGroup of metadata.speech) {
       for (const w of altGroup.words || []) {
         const s = w.start ?? 0;
         const e = w.end ?? 0;
@@ -58,6 +79,8 @@ function InsightsPanel({ metadata, currentTime, duration }) {
     const snippet = words.map((w) => w.t).join(' ').trim();
     return snippet.length > 0 ? snippet : null;
   })();
+
+  const hasSpeechData = metadata?.speech && metadata.speech.length > 0;
 
   const explicitAtTime = (() => {
     // Show last explicit frame before time
@@ -74,39 +97,29 @@ function InsightsPanel({ metadata, currentTime, duration }) {
       <h3>Insights</h3>
       <div><strong>Time:</strong> {formatTime(currentTime)}</div>
 
-      <section style={{ marginTop: 10 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Active Labels</div>
-        {activeLabels.length === 0 ? (
+
+      <section style={{ marginTop: 12 }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>Detected Objects</div>
+        {activeObjects.length === 0 ? (
           <div style={{ color: '#666' }}>None</div>
         ) : (
-          activeLabels.map((l, i) => (
-            <div key={i} className="label-item active">
-              <div><strong>{l.description}</strong></div>
-              {typeof l.confidence === 'number' && (
-                <div>Confidence: {(l.confidence * 100).toFixed(1)}%</div>
-              )}
+          activeObjects.map((obj, i) => (
+            <div key={i} className="label-item">
+              <div><strong>{obj.entity}</strong></div>
+              <div style={{ fontSize: 12, color: '#666' }}>
+                Confidence: {(obj.confidence * 100).toFixed(1)}% @ {formatTime(obj.time)}
+              </div>
             </div>
           ))
         )}
       </section>
 
-      <section style={{ marginTop: 12 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>On-Screen Text (OCR)</div>
-        {activeTexts.length === 0 ? (
-          <div style={{ color: '#666' }}>None</div>
-        ) : (
-          activeTexts.map((t, i) => (
-            <div key={i} className="label-item">
-              <div>“{t.text}”</div>
-              <div style={{ fontSize: 12, color: '#666' }}>{formatTime(t.start)} - {formatTime(t.end)}</div>
-            </div>
-          ))
-        )}
-      </section>
 
       <section style={{ marginTop: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>Speech</div>
-        {speechSnippet ? (
+        {!hasSpeechData ? (
+          <div style={{ color: '#666' }}>No speech transcription available for this video</div>
+        ) : speechSnippet ? (
           <div className="label-item">{speechSnippet}</div>
         ) : (
           <div style={{ color: '#666' }}>No transcript near this time</div>

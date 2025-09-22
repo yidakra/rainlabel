@@ -210,6 +210,10 @@ async def get_metadata(video_name: str) -> Dict[str, Any]:
             "objects": [],
             "text": [],
             "faces": [],
+            "speech": [],
+            "logos": [],
+            "persons": [],
+            "explicit_content": [],
             "message": "No analysis data available. This is sample structure."
         }
     
@@ -227,6 +231,10 @@ async def get_metadata(video_name: str) -> Dict[str, Any]:
             "objects": raw.get("objects", []),
             "text": raw.get("text", []),
             "faces": raw.get("faces", []),
+            "speech": raw.get("speech", []),
+            "logos": raw.get("logos", []),
+            "persons": raw.get("persons", []),
+            "explicit_content": raw.get("explicit_content", []),
         }
         flat_labels = raw.get("labels", [])
         grouped: Dict[str, Dict[str, Any]] = {}
