@@ -84,7 +84,9 @@ function App() {
     return (
       <div className="app">
         <div className="header">
-          <h1>RainLabel</h1>
+          <img src="/tvrain_logo.svg" alt="TV Rain" className="header-logo" />
+        </div>
+        <div className="loading">
           <p>Loading videos...</p>
         </div>
       </div>
@@ -95,7 +97,9 @@ function App() {
     return (
       <div className="app">
         <div className="header">
-          <h1>RainLabel</h1>
+          <img src="/tvrain_logo.svg" alt="TV Rain" className="header-logo" />
+        </div>
+        <div className="error">
           <p style={{ color: 'red' }}>{error}</p>
           <button onClick={fetchVideos}>Retry</button>
         </div>
@@ -106,8 +110,7 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>RainLabel</h1>
-        <p>Video Analysis and Labeling Tool</p>
+        <img src="/tvrain_logo.svg" alt="TV Rain" className="header-logo" />
       </div>
 
       {selectedVideo ? (
