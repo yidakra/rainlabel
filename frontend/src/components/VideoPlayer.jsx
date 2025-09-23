@@ -24,15 +24,16 @@ function VideoPlayer({ video, onBack }) {
   const fetchMetadata = async () => {
     try {
       setLoading(true);
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const response = await axios.get(
-        `${apiBase}/metadata/${encodeURIComponent(video.name)}`,
-        {
-          timeout: 10000,
-          params: { t: Date.now() },
-          headers: { 'Cache-Control': 'no-cache' }
-        }
-      );
+      // const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`/videos/${video.name}.json`);
+      // const response = await axios.get(
+      //   `${apiBase}/metadata/${encodeURIComponent(video.name)}`,
+      //   {
+      //     timeout: 10000,
+      //     params: { t: Date.now() },
+      //     headers: { 'Cache-Control': 'no-cache' }
+      //   }
+      // );
       setMetadata(response.data);
     } catch (err) {
       console.error('Failed to fetch metadata:', err);
@@ -108,14 +109,16 @@ function VideoPlayer({ video, onBack }) {
       <div className="video-layout">
         <div className="video-section">
           <div className="video-player-container">
-            <h2>{video.name}</h2>
+            <h2>{video.title || video.name}</h2>
             <video
               ref={videoRef}
               className="video-player"
               controls
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${video.path}`}
+              src={`/videos/${video.name}`}
+              poster={`/videos/${video.name.replace('.mp4', '.png')}`}
+              // src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${video.path}`}
             >
               Your browser does not support the video tag.
             </video>

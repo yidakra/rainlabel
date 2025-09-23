@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/videos': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
+      // '/videos': {
+      //   target: 'http://localhost:8000',
+      //   changeOrigin: true,
+      // },
       '/metadata': {
         target: 'http://localhost:8000',
         changeOrigin: true,

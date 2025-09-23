@@ -115929,114 +115929,9 @@
   ],
   "speech": [
     {
-      "transcript": "И мы сделали мерч телеканала дождь возвращается мерч для тех, кому не наплевать. Переходите по ссылке в описании оформляете заказ.",
+      "transcript": "И мы сделали мерч телеканала дождь возвращается мерч для тех, кому не наплевать. Переходите по ссылке в описании оформляете заказ. Это узаконенное ограбление правозащитник из города Березники Пермского края. Артём файзулин рассказал о вчерашнем обыски и аресты его жены. Элина файзуллина отправили в СИЗО до 15 октября по делу одоната ХБК Однако её. Муж. Уверен никаких пожертвований. Она не совершала, по крайней мере, умышленно, единственная мог работать автоплатёж, который женщина не отключила удар по Ирине это, конечно, удар по мне написал Артём файзулин в своем телеграм-канале. Теперь он права, А в прошлом работал полицейским его уволили из органов за поддержку политика Алексея Навального И после этого файзулин стал оказывать.",
+      "transcript_en": "We also created merch for the Dozhd TV channel. It's back. Merch for those who care. Follow the link in the description to place an order. This is legalized robbery, says a human rights activist from Berezniki in the Perm region. Artyom Fayzulin spoke about yesterday's searches and the arrest of his wife. Elina Fayzullina was sent to pretrial detention until October 15 in connection with the KhBK donation case. However, her husband... I'm sure there were no donations. She didn't make any, at least not intentionally. The only way the auto-payment could work is if the woman didn't disable it. A blow to Irina is, of course, a blow to me, as Artyom Fayzulin wrote on his Telegram channel. Now he's right. A former police officer, he was fired from the force for supporting politician Alexei Navalny. And after that, Fayzulin began to provide assistance.",
       "confidence": 0.9474725723266602,
-      "words": [
-        {
-          "word": "И",
-          "start": 0.0,
-          "end": 0.8
-        },
-        {
-          "word": "мы",
-          "start": 0.8,
-          "end": 1.0
-        },
-        {
-          "word": "сделали",
-          "start": 1.0,
-          "end": 1.1
-        },
-        {
-          "word": "мерч",
-          "start": 1.1,
-          "end": 2.2
-        },
-        {
-          "word": "телеканала",
-          "start": 2.2,
-          "end": 2.9
-        },
-        {
-          "word": "дождь",
-          "start": 2.9,
-          "end": 3.3
-        },
-        {
-          "word": "возвращается",
-          "start": 3.3,
-          "end": 4.6
-        },
-        {
-          "word": "мерч",
-          "start": 4.6,
-          "end": 6.5
-        },
-        {
-          "word": "для",
-          "start": 6.5,
-          "end": 6.7
-        },
-        {
-          "word": "тех,",
-          "start": 6.7,
-          "end": 7.1
-        },
-        {
-          "word": "кому",
-          "start": 7.1,
-          "end": 7.3
-        },
-        {
-          "word": "не",
-          "start": 7.3,
-          "end": 7.6
-        },
-        {
-          "word": "наплевать.",
-          "start": 7.6,
-          "end": 8.2
-        },
-        {
-          "word": "Переходите",
-          "start": 8.2,
-          "end": 10.4
-        },
-        {
-          "word": "по",
-          "start": 10.4,
-          "end": 10.6
-        },
-        {
-          "word": "ссылке",
-          "start": 10.6,
-          "end": 10.9
-        },
-        {
-          "word": "в",
-          "start": 10.9,
-          "end": 11.0
-        },
-        {
-          "word": "описании",
-          "start": 11.0,
-          "end": 11.1
-        },
-        {
-          "word": "оформляете",
-          "start": 11.1,
-          "end": 12.6
-        },
-        {
-          "word": "заказ.",
-          "start": 12.6,
-          "end": 13.0
-        }
-      ]
-    },
-    {
-      "transcript": " Это узаконенное ограбление правозащитник из города Березники Пермского края. Артём файзулин рассказал о вчерашнем обыски и аресты его жены. Элина файзуллина отправили в СИЗО до 15 октября по делу одоната ХБК Однако её. Муж. Уверен никаких пожертвований. Она не совершала, по крайней мере, умышленно, единственная мог работать автоплатёж, который женщина не отключила удар по Ирине это, конечно, удар по мне написал Артём файзулин в своем телеграм-канале. Теперь он права, А в прошлом работал полицейским его уволили из органов за поддержку политика Алексея Навального И после этого файзулин стал оказывать.",
-      "confidence": 0.928485631942749,
       "words": [
         {
           "word": "Это",
@@ -116482,6 +116377,106 @@
           "word": "оказывать.",
           "start": 59.1,
           "end": 59.5
+        },
+        {
+          "word": "И",
+          "start": 0.0,
+          "end": 0.8
+        },
+        {
+          "word": "мы",
+          "start": 0.8,
+          "end": 1.0
+        },
+        {
+          "word": "сделали",
+          "start": 1.0,
+          "end": 1.1
+        },
+        {
+          "word": "мерч",
+          "start": 1.1,
+          "end": 2.2
+        },
+        {
+          "word": "телеканала",
+          "start": 2.2,
+          "end": 2.9
+        },
+        {
+          "word": "дождь",
+          "start": 2.9,
+          "end": 3.3
+        },
+        {
+          "word": "возвращается",
+          "start": 3.3,
+          "end": 4.6
+        },
+        {
+          "word": "мерч",
+          "start": 4.6,
+          "end": 6.5
+        },
+        {
+          "word": "для",
+          "start": 6.5,
+          "end": 6.7
+        },
+        {
+          "word": "тех,",
+          "start": 6.7,
+          "end": 7.1
+        },
+        {
+          "word": "кому",
+          "start": 7.1,
+          "end": 7.3
+        },
+        {
+          "word": "не",
+          "start": 7.3,
+          "end": 7.6
+        },
+        {
+          "word": "наплевать.",
+          "start": 7.6,
+          "end": 8.2
+        },
+        {
+          "word": "Переходите",
+          "start": 8.2,
+          "end": 10.4
+        },
+        {
+          "word": "по",
+          "start": 10.4,
+          "end": 10.6
+        },
+        {
+          "word": "ссылке",
+          "start": 10.6,
+          "end": 10.9
+        },
+        {
+          "word": "в",
+          "start": 10.9,
+          "end": 11.0
+        },
+        {
+          "word": "описании",
+          "start": 11.0,
+          "end": 11.1
+        },
+        {
+          "word": "оформляете",
+          "start": 11.1,
+          "end": 12.6
+        },
+        {
+          "word": "заказ.",
+          "start": 12.6,
+          "end": 13.0
         }
       ]
     }

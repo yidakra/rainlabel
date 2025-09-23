@@ -7,10 +7,11 @@ function OCRPanel({ metadata, currentTime }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const windowS = 5;
+
   // Build a local speech snippet around current time (±5s)
   const speechSnippet = (() => {
     if (!metadata?.speech || metadata.speech.length === 0) return null;
-    const windowS = 5;
     const words = [];
     for (const altGroup of metadata.speech) {
       for (const w of altGroup.words || []) {
@@ -24,6 +25,26 @@ function OCRPanel({ metadata, currentTime }) {
     words.sort((a, b) => a.s - b.s);
     const snippet = words.map((w) => w.t).join(' ').trim();
     return snippet.length > 0 ? snippet : null;
+  })();
+
+  // Build a local speech snippet around current time (±5s)
+  const speechSnippetEn = (() => {
+    const orig = speechSnippet;
+    if (!orig || !metadata?.speech) return null;
+    // if (!metadata.speech[0]?.transcript_en) return null;
+    
+    const pos = metadata.speech[0].transcript.indexOf(orig);
+    const len = metadata.speech[0].transcript.length;
+    const leftPos = pos / len;
+    const rightPos = (pos + orig.length) / len;
+    if (pos === -1) return null;
+    // const p = `${pos}:${pos + orig.length} / ${leftPos.toFixed(2)}:${rightPos.toFixed(2)}`;
+    // Get the corresponding part of transcript_en based on leftPos and rightPos
+    let transcriptEn = metadata.speech[0].transcript_en || '';
+    const startEn = Math.floor(leftPos * transcriptEn.length);
+    const endEn = Math.ceil(rightPos * transcriptEn.length);
+    const snippetEn = transcriptEn.slice(startEn, endEn).trim();
+    return `${snippetEn}`;
   })();
 
   const activeTexts = (() => {
@@ -52,6 +73,12 @@ function OCRPanel({ metadata, currentTime }) {
         )
       ) : (
         <div style={{ color: '#666', fontSize: '14px' }}>No speech transcription available for this video</div>
+      )}
+      {metadata?.speech && metadata.speech.length > 0 && speechSnippetEn && (
+        <div
+          className="label-item"
+          // style={{ marginTop: 4, fontStyle: 'italic', color: '#444' }}
+        >{speechSnippetEn}</div>
       )}
 
       {/* OCR texts */}

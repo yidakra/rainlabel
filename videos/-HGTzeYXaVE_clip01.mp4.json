@@ -73,7 +73,7 @@
   ],
   "objects": [
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.9992725849151611,
       "frames": [
         {
@@ -748,7 +748,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.9980791807174683,
       "frames": [
         {
@@ -2242,7 +2242,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.999293863773346,
       "frames": [
         {
@@ -2884,7 +2884,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.9981689453125,
       "frames": [
         {
@@ -3868,7 +3868,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.9992987513542175,
       "frames": [
         {
@@ -4921,7 +4921,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 1",
       "confidence": 0.9984538555145264,
       "frames": [
         {
@@ -5833,7 +5833,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 2",
       "confidence": 0.9958061575889587,
       "frames": [
         {
@@ -8374,7 +8374,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 2",
       "confidence": 0.9887313842773438,
       "frames": [
         {
@@ -9403,7 +9403,7 @@
       ]
     },
     {
-      "entity": "person",
+      "entity": "person 2",
       "confidence": 0.9973337650299072,
       "frames": [
         {
@@ -49120,21 +49120,6 @@
       ]
     },
     {
-      "text": "台",
-      "segments": [
-        {
-          "start": 45.28,
-          "end": 50.56,
-          "confidence": 0.8158535957336426
-        },
-        {
-          "start": 51.28,
-          "end": 54.04,
-          "confidence": 0.7748625874519348
-        }
-      ]
-    },
-    {
       "text": "ПОДДЕРЖИТЕ/",
       "segments": [
         {
@@ -49195,7 +49180,7 @@
       ]
     },
     {
-      "text": "OQOPMMTE AOHAT HA TVRAIN.TV/DONATE ||",
+      "text": "OФOPMИTE ДOHAT HA TVRAIN.TV/DONATE ///",
       "segments": [
         {
           "start": 50.68,
@@ -49210,7 +49195,7 @@
       ]
     },
     {
-      "text": "ОФОРМИТЕ ДОНАТ НА ТTV",
+      "text": "ОФОРМИТЕ ДОНАТ НА ТV",
       "segments": [
         {
           "start": 44.92,
@@ -49220,7 +49205,7 @@
       ]
     },
     {
-      "text": "OQOPMUTE AOHAT HA TVRAIN.TV/DONATE ||",
+      "text": "OФOPMИTE ДOHAT HA TVRAIN.TV/DONATE ///",
       "segments": [
         {
           "start": 45.52,
@@ -49235,32 +49220,7 @@
       ]
     },
     {
-      "text": "bitly",
-      "segments": [
-        {
-          "start": 0.04,
-          "end": 11.44,
-          "confidence": 0.9609790444374084
-        },
-        {
-          "start": 12.16,
-          "end": 19.6,
-          "confidence": 0.9583818316459656
-        },
-        {
-          "start": 23.2,
-          "end": 23.56,
-          "confidence": 0.9416618347167969
-        },
-        {
-          "start": 24.4,
-          "end": 37.24,
-          "confidence": 0.9494776129722595
-        }
-      ]
-    },
-    {
-      "text": "ОФОРМИТЕ ДОНАТ НА TVRAIN.TV/DONATE III",
+      "text": "ОФОРМИТЕ ДОНАТ НА TVRAIN.TV/DONATE ///",
       "segments": [
         {
           "start": 58.12,
@@ -49270,107 +49230,7 @@
       ]
     },
     {
-      "text": "- bitly",
-      "segments": [
-        {
-          "start": 3.04,
-          "end": 3.28,
-          "confidence": 0.9000546336174011
-        },
-        {
-          "start": 4.36,
-          "end": 4.6,
-          "confidence": 0.9257073402404785
-        },
-        {
-          "start": 6.28,
-          "end": 7.12,
-          "confidence": 0.9141413569450378
-        },
-        {
-          "start": 9.16,
-          "end": 9.52,
-          "confidence": 0.9255174994468689
-        },
-        {
-          "start": 10.84,
-          "end": 12.04,
-          "confidence": 0.8891605734825134
-        },
-        {
-          "start": 12.28,
-          "end": 12.76,
-          "confidence": 0.9138110280036926
-        },
-        {
-          "start": 16.0,
-          "end": 16.12,
-          "confidence": 0.9206317663192749
-        },
-        {
-          "start": 18.76,
-          "end": 23.08,
-          "confidence": 0.9153661131858826
-        },
-        {
-          "start": 23.32,
-          "end": 24.28,
-          "confidence": 0.9054684638977051
-        },
-        {
-          "start": 24.64,
-          "end": 27.04,
-          "confidence": 0.9150270819664001
-        },
-        {
-          "start": 27.64,
-          "end": 29.08,
-          "confidence": 0.902819037437439
-        },
-        {
-          "start": 29.8,
-          "end": 30.28,
-          "confidence": 0.9005961418151855
-        },
-        {
-          "start": 31.0,
-          "end": 33.16,
-          "confidence": 0.8901150822639465
-        },
-        {
-          "start": 34.84,
-          "end": 35.08,
-          "confidence": 0.8874542117118835
-        },
-        {
-          "start": 35.8,
-          "end": 35.92,
-          "confidence": 0.8874542117118835
-        },
-        {
-          "start": 36.52,
-          "end": 37.6,
-          "confidence": 0.895061731338501
-        }
-      ]
-    },
-    {
-      "text": "回",
-      "segments": [
-        {
-          "start": 46.36,
-          "end": 50.56,
-          "confidence": 0.802892804145813
-        },
-        {
-          "start": 51.28,
-          "end": 54.04,
-          "confidence": 0.973503828048706
-        }
-      ]
-    },
-    {
-      "text": "ПОДДЕРЖИТЕ И",
+      "text": "ПОДДЕРЖИТЕ Н",
       "segments": [
         {
           "start": 40.96,
@@ -49405,21 +49265,6 @@
       ]
     },
     {
-      "text": "П",
-      "segments": [
-        {
-          "start": 5.44,
-          "end": 5.68,
-          "confidence": 0.9933526515960693
-        },
-        {
-          "start": 6.28,
-          "end": 7.0,
-          "confidence": 0.9923058748245239
-        }
-      ]
-    },
-    {
       "text": "DEMO",
       "segments": [
         {
@@ -49430,7 +49275,7 @@
       ]
     },
     {
-      "text": "ОФОРМИТЕ ДОНАТ ННА TVRAIN.T",
+      "text": "ОФОРМИТЕ ДОНАТ НА TVRAIN.T",
       "segments": [
         {
           "start": 45.16,
@@ -49470,22 +49315,12 @@
       ]
     },
     {
-      "text": "OФОРМИТЕ ДОНАТ НA TVRAIN.TV/DONAN",
+      "text": "OФОРМИТЕ ДОНАТ НA TVRAIN.TV/DONATE",
       "segments": [
         {
           "start": 45.4,
           "end": 45.4,
           "confidence": 0.8452780842781067
-        }
-      ]
-    },
-    {
-      "text": "口",
-      "segments": [
-        {
-          "start": 19.48,
-          "end": 19.6,
-          "confidence": 0.8519748449325562
         }
       ]
     },
@@ -49668,26 +49503,6 @@
           "confidence": 0.9350999593734741
         }
       ]
-    },
-    {
-      "text": "TVRA",
-      "segments": [
-        {
-          "start": 37.72,
-          "end": 38.44,
-          "confidence": 1.0
-        },
-        {
-          "start": 38.56,
-          "end": 46.24,
-          "confidence": 0.9947625398635864
-        },
-        {
-          "start": 59.44,
-          "end": 59.92,
-          "confidence": 0.9987055063247681
-        }
-      ]
     }
   ],
   "logos": [
@@ -49748,7 +49563,8 @@
   ],
   "speech": [
     {
-      "transcript": "Одновременно и выбор из 19 стран всё это доступно По единому тарифу от 290 руб. В месяц и пьян наружу можно бесплатно на 7 дней без указания данных карты достаточно ввести email по промокоду terrain. Действует скидка 20% на платёж. VPN нарушил ваш проводник свободный интернет без границ и ограничений. Мы готовы к блокировка. А вы все подробности в описании. Привет Спасибо что смотрите этот репортаж. Поддержите работу журналистов дождя, чтобы мы снимали и выпускали больше подобных фильмов. Мы верим, что они Важны и нужны. Надеюсь и вы с этим согласны наши зрители в России не могут помогать нам из-за статуса нежелательной организации, Поэтому в первую очередь. Я обращаюсь к тем, кто живёт за рубежом. Поддержите.",
+      "transcript": "Одновременно и выбор из 19 стран всё это доступно По единому тарифу от 290 руб. В месяц и VPN наружу можно бесплатно на 7 дней без указания данных карты достаточно ввести email по промокоду terrain. Действует скидка 20% на платёж. VPN нарушил ваш проводник свободный интернет без границ и ограничений. Мы готовы к блокировка. А вы все подробности в описании. Привет Спасибо что смотрите этот репортаж. Поддержите работу журналистов дождя, чтобы мы снимали и выпускали больше подобных фильмов. Мы верим, что они Важны и нужны. Надеюсь и вы с этим согласны наши зрители в России не могут помогать нам из-за статуса нежелательной организации, Поэтому в первую очередь. Я обращаюсь к тем, кто живёт за рубежом. Поддержите.",
+      "transcript_en": "With a choice of 19 countries, all this is available at a single rate starting at 290 rubles per month. You can also use the VPN for free for 7 days without providing credit card details. Just enter your email address and use the promo code \"terrain.\" A 20% discount applies. A VPN has disrupted your connection to a free internet connection without borders or restrictions. We are prepared for blocking. All the details are in the description. Hello, thank you for watching this report. Please support the work of Rain journalists so we can produce and release more films like this. We believe they are important and necessary. I hope you agree. Our viewers in Russia cannot help us due to our status as an undesirable organization. Therefore, first and foremost, I appeal to those living abroad. Please support us.",
       "confidence": 0.9378557801246643,
       "words": [
         {
@@ -49842,7 +49658,7 @@
           "end": 10.4
         },
         {
-          "word": "пьян",
+          "word": "VPN",
           "start": 10.4,
           "end": 10.8
         },

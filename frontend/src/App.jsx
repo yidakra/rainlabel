@@ -49,7 +49,8 @@ function App() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/videos');
+      // const response = await axios.get('/videos');
+      const response = await axios.get('/videos/videos.json');
       setVideos(response.data);
       setError(null);
     } catch (err) {
